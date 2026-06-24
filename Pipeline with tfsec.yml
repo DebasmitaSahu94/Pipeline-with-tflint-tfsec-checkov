@@ -1,0 +1,53 @@
+trigger:
+  branches:
+    include:
+    - none
+pool:
+  name: TerraformPool
+stages:
+- stage: __default
+  jobs:
+  - job: ''
+    displayName: Install Terraform tool
+    steps:
+    - task: TerraformInstaller@1
+      displayName: Install Terraform tool
+      inputs:
+        terraformVersion: 'latest'
+  - job: ''
+    displayName: Terraform steps
+    steps:
+    - task: TerraformTask@5
+      displayName: Terraform init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        backendServiceArm: 'mySVC'
+        backendAzureRmResourceGroupName: 'myRG'
+        backendAzureRmStorageAccountName: 'mysacct'
+        backendAzureRmContainerName: 'backendcontainer'
+        backendAzureRmKey: 'dev.tfstate'
+    - task: TerraformTask@5
+      displayName: Terraform validate
+      inputs:
+        provider: 'azurerm'
+        command: 'validate'
+    - task: tfsec@1
+      displayName: tfsec for compliance and security
+      inputs:
+        version: 'v1.26.0'
+        debug: true
+    - task: TerraformTask@5
+      displayName: Terraform plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        environmentServiceNameAzureRM: 'mySVC'
+    - task: TerraformTask@5
+      displayName: Terraform apply
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        commandOptions: '--auto-approve'
+        environmentServiceNameAzureRM: 'mySVC'
+
